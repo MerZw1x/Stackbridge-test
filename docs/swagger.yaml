@@ -1,0 +1,332 @@
+basePath: /
+definitions:
+  Error:
+    properties:
+      error:
+        example: invalid request body
+        type: string
+    type: object
+  Health:
+    properties:
+      status:
+        example: ok
+        type: string
+    type: object
+  Subscription:
+    properties:
+      created_at:
+        type: string
+      end_date:
+        example: 12-2025
+        type: string
+      id:
+        example: 9b7c2f5e-1c1a-4c2b-9d3e-5f6a7b8c9d0e
+        type: string
+      price:
+        example: 400
+        type: integer
+      service_name:
+        example: Yandex Plus
+        type: string
+      start_date:
+        example: 07-2025
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
+        type: string
+    type: object
+  SubscriptionList:
+    properties:
+      count:
+        example: 2
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/Subscription'
+        type: array
+      limit:
+        example: 50
+        type: integer
+      offset:
+        example: 0
+        type: integer
+    type: object
+  SubscriptionRequest:
+    properties:
+      end_date:
+        example: 12-2025
+        type: string
+      price:
+        example: 400
+        type: integer
+      service_name:
+        example: Yandex Plus
+        type: string
+      start_date:
+        example: 07-2025
+        type: string
+      user_id:
+        example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
+        type: string
+    type: object
+  SubscriptionsCost:
+    properties:
+      currency:
+        example: RUB
+        type: string
+      from:
+        example: 07-2025
+        type: string
+      to:
+        example: 12-2025
+        type: string
+      total:
+        example: 2400
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: |-
+    REST-сервис для агрегации данных об онлайн-подписках пользователей.
+    Даты подписок передаются с точностью до месяца в формате MM-YYYY, стоимость — целое число рублей.
+  title: Subscriptions API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Проверяет доступность хранилища. Для postgres выполняется ping
+        пула соединений.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Health'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Проверка живости сервиса
+      tags:
+      - health
+  /subscriptions:
+    get:
+      description: Возвращает подписки с опциональной фильтрацией по пользователю
+        и названию сервиса.
+      parameters:
+      - description: ID пользователя
+        format: uuid
+        in: query
+        name: user_id
+        type: string
+      - description: Название сервиса (без учёта регистра)
+        in: query
+        name: service_name
+        type: string
+      - description: Размер страницы (1..500, по умолчанию 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Смещение (по умолчанию 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SubscriptionList'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Список подписок
+      tags:
+      - subscriptions
+    post:
+      consumes:
+      - application/json
+      description: Создаёт запись о подписке пользователя. Даты передаются в формате
+        MM-YYYY, end_date опционален.
+      parameters:
+      - description: Данные подписки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/SubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/Subscription'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Создать подписку
+      tags:
+      - subscriptions
+  /subscriptions/{id}:
+    delete:
+      parameters:
+      - description: ID подписки
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Подписка удалена
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Удалить подписку
+      tags:
+      - subscriptions
+    get:
+      parameters:
+      - description: ID подписки
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Subscription'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Получить подписку по ID
+      tags:
+      - subscriptions
+    put:
+      consumes:
+      - application/json
+      description: Полностью заменяет запись о подписке.
+      parameters:
+      - description: ID подписки
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Новые данные подписки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/SubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Subscription'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Обновить подписку
+      tags:
+      - subscriptions
+  /subscriptions/cost:
+    get:
+      description: |-
+        Считает сумму всех подписок, попадающих в период [from, to] включительно.
+        Стоимость подписки учитывается за каждый месяц пересечения с периодом.
+        Подписка без даты окончания считается активной до конца периода.
+      parameters:
+      - description: Начало периода, MM-YYYY
+        example: 07-2025
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: Конец периода, MM-YYYY
+        example: 12-2025
+        in: query
+        name: to
+        required: true
+        type: string
+      - description: ID пользователя
+        format: uuid
+        in: query
+        name: user_id
+        type: string
+      - description: Название сервиса (без учёта регистра)
+        in: query
+        name: service_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SubscriptionsCost'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      summary: Суммарная стоимость подписок за период
+      tags:
+      - subscriptions
+schemes:
+- http
+swagger: "2.0"
