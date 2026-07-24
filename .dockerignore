@@ -1,0 +1,11 @@
+.git
+.gitignore
+.env
+.env.example
+Makefile
+README.md
+Dockerfile
+docker-compose.yml
+**/*_test.go
+migration
+scripts

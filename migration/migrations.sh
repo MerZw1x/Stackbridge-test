@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    echo -n "Usage: sh migration/migratios.sh [OPTIONS]
+    echo -n "Usage: sh migration/migrations.sh [OPTIONS]
 OPTIONS:
     --help,   -h         - show this text and exit
     --new,    -n NAME    - generate new migration file
@@ -44,7 +44,7 @@ elif [ "$1" = "--down" ] || [ "$1" = "-d" ]; then
     fi
 
 else
-    echo "Try: sh migration/migration.sh --help"
+    echo "Try: sh migration/migrations.sh --help"
     exit
 fi
 

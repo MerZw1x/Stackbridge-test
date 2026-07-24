@@ -130,9 +130,9 @@ func (h *SubscriptionsHandler) Health(c *fiber.Ctx) error {
 //	@Failure		500		{object}	errorResponse
 //	@Router			/subscriptions [post]
 func (h *SubscriptionsHandler) Create(c *fiber.Ctx) error {
-	in, errResp := h.bindInput(c)
-	if errResp != nil {
-		return errResp
+	in, err := parseInput(c)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(errorResponse{Error: err.Error()})
 	}
 
 	sub, err := h.service.Create(c.Context(), in)
@@ -188,9 +188,9 @@ func (h *SubscriptionsHandler) Update(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(errorResponse{Error: "invalid subscription id"})
 	}
 
-	in, errResp := h.bindInput(c)
-	if errResp != nil {
-		return errResp
+	in, err := parseInput(c)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(errorResponse{Error: err.Error()})
 	}
 
 	sub, err := h.service.Update(c.Context(), id, in)
@@ -320,23 +320,18 @@ func (h *SubscriptionsHandler) Cost(c *fiber.Ctx) error {
 	})
 }
 
-// bindInput разбирает и валидирует тело запроса. Второе значение не nil — ответ уже отправлен.
-func (h *SubscriptionsHandler) bindInput(c *fiber.Ctx) (domain.SubscriptionInput, error) {
+// parseInput разбирает и валидирует тело запроса. Любая ошибка здесь — это 400.
+func parseInput(c *fiber.Ctx) (domain.SubscriptionInput, error) {
 	var req subscriptionRequest
 	if err := c.BodyParser(&req); err != nil {
-		return domain.SubscriptionInput{}, c.Status(fiber.StatusBadRequest).JSON(errorResponse{Error: "invalid request body"})
+		return domain.SubscriptionInput{}, errors.New("invalid request body")
 	}
 
 	if err := validateSubscriptionReq(req); err != nil {
-		return domain.SubscriptionInput{}, c.Status(fiber.StatusBadRequest).JSON(errorResponse{Error: err.Error()})
+		return domain.SubscriptionInput{}, err
 	}
 
-	in, err := req.toInput()
-	if err != nil {
-		return domain.SubscriptionInput{}, c.Status(fiber.StatusBadRequest).JSON(errorResponse{Error: err.Error()})
-	}
-
-	return in, nil
+	return req.toInput()
 }
 
 // fail переводит доменную ошибку в HTTP-ответ и пишет лог для неожиданных случаев.

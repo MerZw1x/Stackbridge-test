@@ -15,13 +15,13 @@ func TestParseMonthYear(t *testing.T) {
 		wantErr bool
 		want    MonthYear
 	}{
-		"valid":            {raw: "07-2025", want: NewMonthYear(2025, time.July)},
-		"december":         {raw: "12-2025", want: NewMonthYear(2025, time.December)},
-		"spaces_trimmed":   {raw: "  01-2020  ", want: NewMonthYear(2020, time.January)},
-		"empty":            {raw: "", wantErr: true},
+		"valid":              {raw: "07-2025", want: NewMonthYear(2025, time.July)},
+		"december":           {raw: "12-2025", want: NewMonthYear(2025, time.December)},
+		"spaces_trimmed":     {raw: "  01-2020  ", want: NewMonthYear(2020, time.January)},
+		"empty":              {raw: "", wantErr: true},
 		"month_out_of_range": {raw: "13-2025", wantErr: true},
-		"wrong_order":      {raw: "2025-07", wantErr: true},
-		"garbage":          {raw: "july", wantErr: true},
+		"wrong_order":        {raw: "2025-07", wantErr: true},
+		"garbage":            {raw: "july", wantErr: true},
 	}
 
 	for name, tc := range cases {

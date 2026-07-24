@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:14.21-alpine
+    ports:
+      - '5432:5432'
+    restart: always
+    environment:
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=${DATABASE_NAME}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  migrator:
+    image: ghcr.io/kukymbr/goose-docker:3.24.1
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - GOOSE_DRIVER=postgres
+      - GOOSE_DBSTRING=host=db port=5432 user=${DATABASE_USER} password=${DATABASE_PASSWORD} dbname=${DATABASE_NAME} sslmode=disable
+    volumes:
+      - ./migration:/migrations
+    command: ["up"]
+    restart: "no"
+
+  backend:
+    depends_on:
+      db:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '8080:8080'
+    restart: always
+    env_file:
+      - ".env"
+    environment:
+      - DATABASE_HOST=db
+
+volumes:
+  postgres_data:
